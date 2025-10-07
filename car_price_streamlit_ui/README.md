@@ -1,82 +1,74 @@
-# Lightweight React Template for KAVIA
+# Used Car Price Frontend (React)
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A lightweight React UI that connects to the ML backend to predict used car prices and view model metrics.
 
-## Features
+## Highlights
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Ocean Professional theme (primary #2563EB, accent #F59E0B)
+- Sidebar form for car features with validation
+- Prediction result display
+- Metrics overview with simple inline bar charts
+- Minimal dependencies, native fetch for API calls
 
-## Getting Started
+## Quick Start
 
-In the project directory, you can run:
+1) Install dependencies
+   npm install
 
-### `npm start`
+2) Configure backend URL
+   - Copy .env.example to .env
+   - Set REACT_APP_BACKEND_BASE_URL to your backend base URL (default http://localhost:3001)
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+3) Run the app
+   npm start
+   Open http://localhost:3000
 
-### `npm test`
+## Environment variables
 
-Launches the test runner in interactive watch mode.
+Create a .env file in this folder:
 
-### `npm run build`
+REACT_APP_BACKEND_BASE_URL=http://localhost:3001
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Notes:
+- Create React App only exposes variables prefixed with REACT_APP_.
+- The app falls back to http://localhost:3001 if not set.
 
-## Customization
+## API contract
 
-### Colors
+- GET /metrics
+  Response example:
+  {
+    "ready": true,
+    "metrics": { "r2": 0.82, "mae": 1200.5, "rmse": 1800.7 },
+    "trained_at": "2025-10-07T12:00:00Z",
+    "model_type": "random_forest",
+    "features": ["year","mileage","brand","model","fuel_type","transmission","owner_count","engine_size","seats"]
+  }
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+- POST /predict
+  Body example:
+  {
+    "year": 2017,
+    "mileage": 45000,
+    "brand": "Toyota",
+    "model": "Corolla",
+    "fuel_type": "Petrol",
+    "transmission": "Manual",
+    "owner_count": 1,
+    "engine_size": 1.6,
+    "seats": 5
+  }
+  Response: can be a number or { "price": number }.
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+## Project Scripts
 
-### Components
+- npm start - start dev server
+- npm test - run tests
+- npm run build - build for production
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+## Notes
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+- The metrics chart uses simple CSS-based bars—no chart libraries required.
+- Theme toggle supports light/dark using CSS variables.
+- Errors are shown inline and in alert boxes.
 
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
