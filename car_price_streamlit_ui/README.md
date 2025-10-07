@@ -33,32 +33,41 @@ Notes:
 - Create React App only exposes variables prefixed with REACT_APP_.
 - The app falls back to http://localhost:3001 if not set.
 
-## API contract
+## API contract (aligned with backend)
+
+- GET /
+  Health check. Response: { "message": "Healthy" }
 
 - GET /metrics
   Response example:
   {
     "ready": true,
-    "metrics": { "r2": 0.82, "mae": 1200.5, "rmse": 1800.7 },
-    "trained_at": "2025-10-07T12:00:00Z",
-    "model_type": "random_forest",
-    "features": ["year","mileage","brand","model","fuel_type","transmission","owner_count","engine_size","seats"]
+    "metrics": { "r2": 0.82, "mae": 150000.5, "rmse": 220000.7 },
+    "trained_at": 1736200000,
+    "model_type": "rf",
+    "features": ["brand","model","fuel_type","transmission","year","mileage_km","owner_count","engine_cc","seats"]
   }
 
 - POST /predict
-  Body example:
+  Body example (frontend converts liters to cc and mileage to mileage_km automatically):
   {
-    "year": 2017,
-    "mileage": 45000,
     "brand": "Toyota",
     "model": "Corolla",
     "fuel_type": "Petrol",
     "transmission": "Manual",
+    "year": 2018,
+    "mileage_km": 45000,
     "owner_count": 1,
-    "engine_size": 1.6,
+    "engine_cc": 1600,
     "seats": 5
   }
-  Response: can be a number or { "price": number }.
+
+  Success Response:
+  {
+    "predicted_price": 525000.0,
+    "inputs": { ...echoed sanitized inputs... },
+    "model_info": { "model_type": "rf", "trained_at": 1736200000 }
+  }
 
 ## Project Scripts
 

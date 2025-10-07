@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { getMetrics, predictPrice, getBackendBaseUrl } from './api';
+import { getMetrics, predictPrice, getBackendBaseUrl, getHealth } from './api';
 
 // Helper components
 function MetricBar({ label, value, maxValue, color, tooltip }) {
@@ -67,6 +67,8 @@ function App() {
   const [metricsData, setMetricsData] = useState(null);
   const [metricsErr, setMetricsErr] = useState('');
   const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [health, setHealth] = useState(null);
+  const [healthErr, setHealthErr] = useState('');
 
   const backendUrl = useMemo(() => getBackendBaseUrl(), []);
 
@@ -79,6 +81,14 @@ function App() {
     const load = async () => {
       setLoadingMetrics(true);
       setMetricsErr('');
+      setHealthErr('');
+      try {
+        // Health first to reflect basic readiness
+        const h = await getHealth(controller.signal);
+        setHealth(h);
+      } catch (e) {
+        setHealthErr(e.message);
+      }
       try {
         const data = await getMetrics(controller.signal);
         setMetricsData(data);
@@ -101,15 +111,18 @@ function App() {
   const validate = () => {
     const e = {};
     const num = (v) => (v === '' || v === null) ? NaN : Number(v);
-    if (!Number.isInteger(Number(form.year)) || Number(form.year) < 1980 || Number(form.year) > 2035) e.year = 'Year must be between 1980 and 2035';
+    // Backend allows 1950..(currentYear+1)
+    const currentYearMax = new Date().getFullYear() + 1;
+    if (!Number.isInteger(Number(form.year)) || Number(form.year) < 1950 || Number(form.year) > currentYearMax) e.year = `Year must be between 1950 and ${currentYearMax}`;
     if (!Number.isFinite(num(form.mileage)) || Number(form.mileage) < 0) e.mileage = 'Mileage must be a non-negative number';
     if (!form.brand) e.brand = 'Brand is required';
     if (!form.model) e.model = 'Model is required';
     if (!form.fuel_type) e.fuel_type = 'Fuel type is required';
     if (!form.transmission) e.transmission = 'Transmission is required';
-    if (!Number.isInteger(Number(form.owner_count)) || Number(form.owner_count) < 0) e.owner_count = 'Owner count must be 0 or more';
-    if (!Number.isFinite(num(form.engine_size)) || Number(form.engine_size) <= 0) e.engine_size = 'Engine size must be > 0';
-    if (!Number.isInteger(Number(form.seats)) || Number(form.seats) <= 0) e.seats = 'Seats must be a positive integer';
+    if (!Number.isInteger(Number(form.owner_count)) || Number(form.owner_count) < 0 || Number(form.owner_count) > 10) e.owner_count = 'Owner count must be between 0 and 10';
+    // Backend expects engine_cc >= 100; UI captures liters, so require >= 0.1 L
+    if (!Number.isFinite(num(form.engine_size)) || Number(form.engine_size) < 0.1) e.engine_size = 'Engine size must be at least 0.1 L';
+    if (!Number.isInteger(Number(form.seats)) || Number(form.seats) < 1 || Number(form.seats) > 20) e.seats = 'Seats must be between 1 and 20';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -123,7 +136,7 @@ function App() {
 
     setIsPredicting(true);
     try {
-      const payload = {
+      const uiPayload = {
         year: Number(form.year),
         mileage: Number(form.mileage),
         brand: form.brand,
@@ -134,9 +147,9 @@ function App() {
         engine_size: Number(form.engine_size),
         seats: Number(form.seats)
       };
-      const res = await predictPrice(payload);
-      // Accept either raw number or object like { price: 12345 }
-      const price = typeof res === 'number' ? res : (res.price ?? res.prediction ?? res.result ?? null);
+      const res = await predictPrice(uiPayload);
+      // Backend returns { predicted_price, inputs, model_info }
+      const price = res && typeof res.predicted_price !== 'undefined' ? res.predicted_price : null;
       setPrediction(price);
     } catch (e) {
       setPredictErr(e.message);
@@ -245,9 +258,11 @@ function App() {
                 </div>
                 <div className="info-item">
                   <div className="info-label">Trained At</div>
-                  <div className="info-value">{metricsData.trained_at ? new Date(metricsData.trained_at).toLocaleString() : 'N/A'}</div>
+                  <div className="info-value">{metricsData.trained_at ? new Date(metricsData.trained_at * (metricsData.trained_at < 10_000_000_000 ? 1000 : 1)).toLocaleString() : 'N/A'}</div>
                 </div>
               </div>
+              {healthErr && <div className="alert error">Health: {healthErr}</div>}
+              {health && !healthErr && <div className="badge success">Health OK</div>}
               <MetricsChart metrics={metricsData.metrics || {}} />
               <div className="features-card">
                 <div className="card-header">
